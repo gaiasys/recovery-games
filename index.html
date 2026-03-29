@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SUD Education Maze Game</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="game-shell">
+    <div class="hud-bar">
+      <div class="hud-group hud-group-single">
+        <span id="hudLevel">Level: 1</span>
+        <span id="hudEnergy">Chances Left: 6</span>
+        <span id="hudScore">Protective Points: 0.00</span>
+        <span id="hudCaught">Monster Hits: 0</span>
+        <span id="hudSafeZone">Safe Place: NONE</span>
+        <span id="hudFocus">Strongest Safe Place: SCHOOL</span>
+        <span id="hudTool">Coping Tool: None</span>
+      </div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="game" width="851" height="667"></canvas>
+
+      <div id="setupOverlay" class="overlay">
+        <div class="setup-panel">
+          <div class="setup-scroll">
+            <div class="overlay-card setup-card">
+              <div class="setup-topbar">
+                <div class="setup-topbar-copy">
+                  <div class="setup-kicker" id="surveyStepLabel">Step 1 of 3</div>
+                  <h1 id="setupTitle">Get Ready for Your Run</h1>
+                  <p id="setupSub">
+                    Choose what helps your character stay safe, calm, and strong.
+                  </p>
+                </div>
+
+                <div class="setup-progress-wrap">
+                  <div class="setup-progress-track">
+                    <div id="surveyProgressFill" class="setup-progress-fill"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setup-stage-header">
+                <h2 id="surveyStageTitle">Pick What Helps You Most</h2>
+                <p id="surveyStageSub">
+                  Choose the biggest challenge and the best ways to stay safe during the run.
+                </p>
+              </div>
+
+              <div class="setup-layout">
+  <section id="buildSnapshotPanel" class="build-panel build-panel-top"></section>
+
+  <div class="setup-main">
+    <div id="questionnaireGrid" class="questionnaire-grid"></div>
+    <div id="setupError" class="error-text"></div>
+  </div>
+
+  <section id="choicesPanel" class="build-panel build-panel-bottom"></section>
+</div>
+            </div>
+          </div>
+
+          <div class="overlay-actions setup-actions">
+            <button id="prevStepBtn" class="secondary" type="button">Back</button>
+            <button id="nextStepBtn" class="secondary" type="button">Next</button>
+            <button id="startGameBtn" class="primary" type="button">Start Run</button>
+            <button id="endSessionBtn" class="secondary hidden" type="button">Finish</button>
+            <button id="runAgainBtn" class="primary hidden" type="button">Play Next Run</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="scenarioModal" class="overlay hidden">
+        <div class="overlay-card scenario-card">
+          <div class="scenario-header">
+            <h2 id="scenarioTitle">Quick Choice</h2>
+            <div id="scenarioMeta" class="scenario-meta"></div>
+          </div>
+
+          <p id="scenarioText" class="scenario-text"></p>
+          <div id="scenarioHint" class="scenario-hint hidden"></div>
+
+          <div id="scenarioChoices" class="scenario-choices"></div>
+
+          <div id="scenarioResultBox" class="result-box hidden">
+            <p id="scenarioFeedback" class="scenario-feedback"></p>
+            <div id="scenarioOutcome" class="outcome-pill"></div>
+
+            <div class="overlay-actions">
+              <button id="scenarioContinueBtn" class="primary" type="button">Continue</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/script.js"></script>
+</body>
+</html>
