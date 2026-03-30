@@ -1,106 +1,4 @@
 /* =========================================================
-   TELEMETRY MODULE (Session & Engagement Tracking)
-========================================================= */
-
-const TELEMETRY_KEY = "recoveryGameTelemetry";
-const TELEMETRY_DEFAULTS = {
-  sessionCount: 0,
-  cumulativeAttemptCount: 0,
-  lastSessionEnd: null,
-  lastSessionStart: null,
-  lastSessionDuration: 0,
-  lastSessionInterval: null,
-  sessionFrequency: 0,
-  lastCompletionStatus: null,
-  lastExitType: null
-};
-
-function loadTelemetryStore() {
-  try {
-    return { ...TELEMETRY_DEFAULTS, ...JSON.parse(localStorage.getItem(TELEMETRY_KEY) || '{}') };
-  } catch (e) {
-    return { ...TELEMETRY_DEFAULTS };
-  }
-}
-
-function saveTelemetryStore(store) {
-  localStorage.setItem(TELEMETRY_KEY, JSON.stringify(store));
-}
-
-function startTelemetrySession() {
-  const store = loadTelemetryStore();
-  const now = Date.now();
-  store.sessionCount += 1;
-  store.lastSessionStart = now;
-  if (store.lastSessionEnd) {
-    store.lastSessionInterval = now - store.lastSessionEnd;
-  }
-  saveTelemetryStore(store);
-}
-
-function endTelemetrySession({ completed = false, exitType = "normal" } = {}) {
-  const store = loadTelemetryStore();
-  const now = Date.now();
-  store.lastSessionEnd = now;
-  if (store.lastSessionStart) {
-    store.lastSessionDuration = now - store.lastSessionStart;
-  }
-  store.lastCompletionStatus = completed ? "completed" : "quit";
-  store.lastExitType = exitType;
-  saveTelemetryStore(store);
-}
-
-function incrementAttempt(withinSession = true) {
-  const store = loadTelemetryStore();
-  store.cumulativeAttemptCount += 1;
-  saveTelemetryStore(store);
-}
-
-function getTelemetrySummary() {
-  const store = loadTelemetryStore();
-  return {
-    sessionCount: store.sessionCount,
-    cumulativeAttemptCount: store.cumulativeAttemptCount,
-    lastSessionStart: store.lastSessionStart,
-    lastSessionEnd: store.lastSessionEnd,
-    lastSessionDuration: store.lastSessionDuration,
-    lastSessionInterval: store.lastSessionInterval,
-    lastCompletionStatus: store.lastCompletionStatus,
-    lastExitType: store.lastExitType
-  };
-}
-
-// Start session on page load
-startTelemetrySession();
-
-// End session on page unload (normal or forced close)
-window.addEventListener("beforeunload", function (e) {
-  // If game is completed, set completed=true, else quit
-  const completed = window.__gameSessionCompleted === true;
-  // If timeout or forced, you can set exitType accordingly (extend as needed)
-  endTelemetrySession({ completed, exitType: "normal" });
-});
-
-// Helper to mark session as completed (call this when user finishes all runs)
-function markGameSessionCompleted() {
-  window.__gameSessionCompleted = true;
-  endTelemetrySession({ completed: true, exitType: "normal" });
-}
-
-// Helper to mark session as quit (call this on quit/exit)
-function markGameSessionQuit(exitType = "quit") {
-  window.__gameSessionCompleted = false;
-  endTelemetrySession({ completed: false, exitType });
-}
-
-// Example: increment attempt when a run starts
-function onGameAttemptStart() {
-  incrementAttempt();
-}
-
-// You can use getTelemetrySummary() to access metrics for debugging or analytics
-
-/* =========================================================
    DOM REFERENCES
 ========================================================= */
 
@@ -1691,7 +1589,7 @@ function bindRankChipLogic() {
       const rank = Number(chip.dataset.rank);
       setRankSelection(groupKey, optionValue, rank);
     });
- 
+  });
 }
 
 function renderBuildSummary() {
@@ -1939,11 +1837,6 @@ function endRun(reason = "chances_depleted") {
 
   logEvent("run_ended", { reason });
   openPostSurvey(reason);
-
-  // If this was the last run, mark session as completed
-  if (telemetry.currentRunNumber >= TOTAL_RUNS || reason === "completed") {
-    markGameSessionCompleted();
-  }
 }
 
 function updateFocusHUD() {
@@ -4395,20 +4288,27 @@ if (startGameBtn) {
 }
 
 
-
 if (endSessionBtn) {
   endSessionBtn.addEventListener("click",  () => {
-    if (appPhase === "post_complete" || appPhase === "post" || appPhase === "pre" || appPhase === "ended") {
+    if (appPhase === "post_complete") {
       openEndedState();
-      markGameSessionCompleted(); // Telemetry: mark as completed on finish
       return;
     }
+
+    if (appPhase === "post") {
+      openEndedState();
+      return;
+    }
+
+    if (appPhase === "pre" || appPhase === "ended") {
+      openEndedState();
+      return;
+    }
+
     gameStarted = false;
     openEndedState();
-    markGameSessionQuit(); // Telemetry: mark as quit if session ended early
   });
 }
-
 
 if (runAgainBtn) {
   runAgainBtn.addEventListener("click",  () => {
@@ -4417,14 +4317,12 @@ if (runAgainBtn) {
       telemetry.currentRunNumber = 1;
       playerState.protectivePoints = 0;
       startRunLoop("new_session_same_build");
-      onGameAttemptStart(); // Telemetry: new session attempt
       return;
     }
     if (telemetry.currentRunNumber >= TOTAL_RUNS) return;
     telemetry.currentRunNumber += 1;
     telemetry.cumulativeAttemptCount += 1;
     startRunLoop("next_run");
-    onGameAttemptStart(); // Telemetry: new run attempt
   });
 }
 
