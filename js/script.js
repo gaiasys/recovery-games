@@ -1,3 +1,259 @@
+
+/* =========================================================
+   TELEMETRY MODULE (Session, Agency, Relatedness/Emotional-Affective Engagement)
+========================================================= */
+
+// --- Relatedness/Emotional-Affective Engagement Telemetry ---
+const RELATEDNESS_TELEMETRY_KEY = "recoveryGameRelatednessTelemetry";
+const RELATEDNESS_DEFAULTS = {
+  inputEvents: [], // {ts, type, inThreat}
+  threatPeriods: [], // {start, end}
+  baselinePeriods: [], // {start, end}
+  apmBaseline: 0,
+  apmThreat: 0,
+  apmChange: 0,
+  reactionTimes: [], // {type, ms, context}
+  hesitationTimes: [], // {ms, context}
+  idleTimes: [], // {ms, afterThreat: true/false}
+  recoveryTimes: [], // {ms, context}
+  arousalMarkers: [], // {ts, apm, inThreat}
+  socialPromptResponses: [], // {promptId, responseTime, prosocial, helpSeeking, correctSocialCue}
+  postGameSelfReport: null
+};
+
+function loadRelatednessTelemetry() {
+  try {
+    return { ...RELATEDNESS_DEFAULTS, ...JSON.parse(localStorage.getItem(RELATEDNESS_TELEMETRY_KEY) || '{}') };
+  } catch (e) {
+    return { ...RELATEDNESS_DEFAULTS };
+  }
+}
+
+function saveRelatednessTelemetry(store) {
+  localStorage.setItem(RELATEDNESS_TELEMETRY_KEY, JSON.stringify(store));
+}
+
+// --- Input Frequency & APM Tracking ---
+let lastInputTs = null;
+let lastThreatState = false;
+let threatStartTs = null;
+let baselineStartTs = Date.now();
+let inputCountBaseline = 0;
+let inputCountThreat = 0;
+
+function recordInputEvent(type) {
+  const now = Date.now();
+  const inThreat = threatState && threatState.inDanger;
+  const store = loadRelatednessTelemetry();
+  store.inputEvents.push({ ts: now, type, inThreat });
+  if (inThreat) {
+    inputCountThreat++;
+  } else {
+    inputCountBaseline++;
+  }
+  saveRelatednessTelemetry(store);
+  lastInputTs = now;
+}
+
+// --- Threat/Baseline Period Tracking ---
+function updateThreatPeriod() {
+  const now = Date.now();
+  const inThreat = threatState && threatState.inDanger;
+  const store = loadRelatednessTelemetry();
+  if (inThreat && !lastThreatState) {
+    // Threat just started
+    threatStartTs = now;
+    store.threatPeriods.push({ start: now, end: null });
+    // End baseline period
+    if (baselineStartTs) {
+      store.baselinePeriods.push({ start: baselineStartTs, end: now });
+      baselineStartTs = null;
+    }
+  } else if (!inThreat && lastThreatState) {
+    // Threat just ended
+    if (store.threatPeriods.length > 0 && !store.threatPeriods[store.threatPeriods.length - 1].end) {
+      store.threatPeriods[store.threatPeriods.length - 1].end = now;
+    }
+    baselineStartTs = now;
+  }
+  lastThreatState = inThreat;
+  saveRelatednessTelemetry(store);
+}
+
+// --- APM Calculation ---
+function calculateAPM(periodStart, periodEnd, inputCount) {
+  const minutes = (periodEnd - periodStart) / 60000;
+  return minutes > 0 ? inputCount / minutes : 0;
+}
+
+function finalizeAPM() {
+  const store = loadRelatednessTelemetry();
+  // Baseline
+  if (store.baselinePeriods.length > 0) {
+    const b = store.baselinePeriods[0];
+    store.apmBaseline = calculateAPM(b.start, b.end, inputCountBaseline);
+  }
+  // Threat
+  if (store.threatPeriods.length > 0) {
+    const t = store.threatPeriods[0];
+    store.apmThreat = calculateAPM(t.start, t.end, inputCountThreat);
+  }
+  store.apmChange = store.apmThreat - store.apmBaseline;
+  saveRelatednessTelemetry(store);
+}
+
+// --- Reaction/Hesitation/Idle/Recovery Times ---
+function recordReactionTime(type, ms, context = {}) {
+  const store = loadRelatednessTelemetry();
+  store.reactionTimes.push({ type, ms, context });
+  saveRelatednessTelemetry(store);
+}
+function recordHesitationTime(ms, context = {}) {
+  const store = loadRelatednessTelemetry();
+  store.hesitationTimes.push({ ms, context });
+  saveRelatednessTelemetry(store);
+}
+function recordIdleTime(ms, afterThreat = false) {
+  const store = loadRelatednessTelemetry();
+  store.idleTimes.push({ ms, afterThreat });
+  saveRelatednessTelemetry(store);
+}
+function recordRecoveryTime(ms, context = {}) {
+  const store = loadRelatednessTelemetry();
+  store.recoveryTimes.push({ ms, context });
+  saveRelatednessTelemetry(store);
+}
+
+// --- Arousal Markers (APM over time) ---
+function recordArousalMarker(apm, inThreat) {
+  const store = loadRelatednessTelemetry();
+  store.arousalMarkers.push({ ts: Date.now(), apm, inThreat });
+  saveRelatednessTelemetry(store);
+}
+
+// --- Social/Prosocial Response Tracking ---
+function recordSocialPromptResponse(promptId, responseTime, prosocial, helpSeeking, correctSocialCue) {
+  const store = loadRelatednessTelemetry();
+  store.socialPromptResponses.push({ promptId, responseTime, prosocial, helpSeeking, correctSocialCue });
+  saveRelatednessTelemetry(store);
+}
+
+// --- Post-game Self Report (to be called after post-game survey) ---
+function recordPostGameSelfReport(report) {
+  const store = loadRelatednessTelemetry();
+  store.postGameSelfReport = report;
+  saveRelatednessTelemetry(store);
+}
+
+// --- Hook input events ---
+window.addEventListener("keydown", (e) => {
+  recordInputEvent("keydown");
+});
+window.addEventListener("mousedown", (e) => {
+  recordInputEvent("mousedown");
+});
+
+// --- Call updateThreatPeriod() in your main update loop ---
+// --- Call finalizeAPM() at end of run/session ---
+
+const TELEMETRY_KEY = "recoveryGameTelemetry";
+const TELEMETRY_DEFAULTS = {
+  sessionCount: 0,
+  cumulativeAttemptCount: 0,
+  lastSessionEnd: null,
+  lastSessionStart: null,
+  lastSessionDuration: 0,
+  lastSessionInterval: null,
+  sessionFrequency: 0,
+  lastCompletionStatus: null,
+  lastExitType: null
+};
+
+function loadTelemetryStore() {
+  try {
+    return { ...TELEMETRY_DEFAULTS, ...JSON.parse(localStorage.getItem(TELEMETRY_KEY) || '{}') };
+  } catch (e) {
+    return { ...TELEMETRY_DEFAULTS };
+  }
+}
+
+function saveTelemetryStore(store) {
+  localStorage.setItem(TELEMETRY_KEY, JSON.stringify(store));
+}
+
+function startTelemetrySession() {
+  const store = loadTelemetryStore();
+  const now = Date.now();
+  store.sessionCount += 1;
+  store.lastSessionStart = now;
+  if (store.lastSessionEnd) {
+    store.lastSessionInterval = now - store.lastSessionEnd;
+  }
+  saveTelemetryStore(store);
+}
+
+function endTelemetrySession({ completed = false, exitType = "normal" } = {}) {
+  const store = loadTelemetryStore();
+  const now = Date.now();
+  store.lastSessionEnd = now;
+  if (store.lastSessionStart) {
+    store.lastSessionDuration = now - store.lastSessionStart;
+  }
+  store.lastCompletionStatus = completed ? "completed" : "quit";
+  store.lastExitType = exitType;
+  saveTelemetryStore(store);
+}
+
+function incrementAttempt(withinSession = true) {
+  const store = loadTelemetryStore();
+  store.cumulativeAttemptCount += 1;
+  saveTelemetryStore(store);
+}
+
+function getTelemetrySummary() {
+  const store = loadTelemetryStore();
+  return {
+    sessionCount: store.sessionCount,
+    cumulativeAttemptCount: store.cumulativeAttemptCount,
+    lastSessionStart: store.lastSessionStart,
+    lastSessionEnd: store.lastSessionEnd,
+    lastSessionDuration: store.lastSessionDuration,
+    lastSessionInterval: store.lastSessionInterval,
+    lastCompletionStatus: store.lastCompletionStatus,
+    lastExitType: store.lastExitType
+  };
+}
+
+// Start session on page load
+startTelemetrySession();
+
+// End session on page unload (normal or forced close)
+window.addEventListener("beforeunload", function (e) {
+  // If game is completed, set completed=true, else quit
+  const completed = window.__gameSessionCompleted === true;
+  // If timeout or forced, you can set exitType accordingly (extend as needed)
+  endTelemetrySession({ completed, exitType: "normal" });
+});
+
+// Helper to mark session as completed (call this when user finishes all runs)
+function markGameSessionCompleted() {
+  window.__gameSessionCompleted = true;
+  endTelemetrySession({ completed: true, exitType: "normal" });
+}
+
+// Helper to mark session as quit (call this on quit/exit)
+function markGameSessionQuit(exitType = "quit") {
+  window.__gameSessionCompleted = false;
+  endTelemetrySession({ completed: false, exitType });
+}
+
+// Example: increment attempt when a run starts
+function onGameAttemptStart() {
+  incrementAttempt();
+}
+
+// You can use getTelemetrySummary() to access metrics for debugging or analytics
+
 /* =========================================================
    DOM REFERENCES
 ========================================================= */
@@ -1837,6 +2093,11 @@ function endRun(reason = "chances_depleted") {
 
   logEvent("run_ended", { reason });
   openPostSurvey(reason);
+
+  // If this was the last run, mark session as completed
+  if (telemetry.currentRunNumber >= TOTAL_RUNS || reason === "completed") {
+    markGameSessionCompleted();
+  }
 }
 
 function updateFocusHUD() {
@@ -4288,27 +4549,20 @@ if (startGameBtn) {
 }
 
 
+
 if (endSessionBtn) {
   endSessionBtn.addEventListener("click",  () => {
-    if (appPhase === "post_complete") {
+    if (appPhase === "post_complete" || appPhase === "post" || appPhase === "pre" || appPhase === "ended") {
       openEndedState();
+      markGameSessionCompleted(); // Telemetry: mark as completed on finish
       return;
     }
-
-    if (appPhase === "post") {
-      openEndedState();
-      return;
-    }
-
-    if (appPhase === "pre" || appPhase === "ended") {
-      openEndedState();
-      return;
-    }
-
     gameStarted = false;
     openEndedState();
+    markGameSessionQuit(); // Telemetry: mark as quit if session ended early
   });
 }
+
 
 if (runAgainBtn) {
   runAgainBtn.addEventListener("click",  () => {
@@ -4317,12 +4571,14 @@ if (runAgainBtn) {
       telemetry.currentRunNumber = 1;
       playerState.protectivePoints = 0;
       startRunLoop("new_session_same_build");
+      onGameAttemptStart(); // Telemetry: new session attempt
       return;
     }
     if (telemetry.currentRunNumber >= TOTAL_RUNS) return;
     telemetry.currentRunNumber += 1;
     telemetry.cumulativeAttemptCount += 1;
     startRunLoop("next_run");
+    onGameAttemptStart(); // Telemetry: new run attempt
   });
 }
 
