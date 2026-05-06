@@ -92,12 +92,38 @@ body {
 ========================================================= */
 
 .hud-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   padding: 10px 12px;
   background: var(--bg-panel);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-panel);
   overflow: visible;
+}
+
+.hud-logout {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 122, 122, 0.35);
+  background: var(--accent-red-soft);
+  color: var(--accent-red);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s;
+}
+
+.hud-logout:hover {
+  background: rgba(255, 122, 122, 0.22);
+  border-color: rgba(255, 122, 122, 0.6);
 }
 
 .hud-group {
