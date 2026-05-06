@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SUD Education Maze Game</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="game-shell">
+    <div class="hud-bar">
+      <div class="hud-group hud-group-single">
+        <span id="hudLevel">Level: 1</span>
+        <span id="hudEnergy">Chances Left: 6</span>
+        <span id="hudScore">Protective Points: 0.00</span>
+        <span id="hudCaught">Monster Hits: 0</span>
+        <span id="hudFocus">Strongest Safe Place: SCHOOL</span>
+        <span id="hudTool">Support: Off</span>
+      </div>
+    </div>
+
+    <div id="setupOverlay" class="overlay">
+      <div class="setup-panel">
+        <div class="setup-scroll">
+          <div class="overlay-card setup-card">
+            <div class="setup-topbar">
+              <div class="setup-topbar-copy">
+                <h1 id="setupTitle">Build Your Character</h1>
+                <p id="setupSub">
+                  Spend your points to shape how your character handles pressure, finds support, and bounces back.
+                </p>
+              </div>
+
+              <div class="setup-progress-wrap">
+                <div class="setup-progress-track">
+                  <div id="surveyProgressFill" class="setup-progress-fill"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="setup-stage-header">
+              <span id="surveyStepLabel" class="setup-kicker">Step 1 of 3</span>
+              <h2 id="surveyStageTitle">Choose Your Starting Build</h2>
+              <p id="surveyStageSub">
+                Set your character’s biggest challenge and the tools they will rely on during the run.
+              </p>
+            </div>
+
+            <div class="setup-layout">
+              <section id="buildSnapshotPanel" class="build-panel build-panel-top"></section>
+
+              <div class="setup-main">
+                <div id="gradeEntryCard" class="grade-entry-card">
+                  <label class="grade-entry-label" for="studentGrade">Student Grade</label>
+                  <div class="grade-entry-row">
+                    <select id="studentGrade" class="grade-entry-select">
+                      <option value="">Select grade</option>
+                      <option value="1" data-grade-band="1-2">1st grade</option>
+                      <option value="2" data-grade-band="1-2">2nd grade</option>
+                      <option value="3" data-grade-band="3-4">3rd grade</option>
+                      <option value="4" data-grade-band="3-4">4th grade</option>
+                      <option value="5" data-grade-band="5-6">5th grade</option>
+                      <option value="6" data-grade-band="5-6">6th grade</option>
+                      <option value="7" data-grade-band="7-8">7th grade</option>
+                      <option value="8" data-grade-band="7-8">8th grade</option>
+                      <option value="9" data-grade-band="9-12">9th grade</option>
+                      <option value="10" data-grade-band="9-12">10th grade</option>
+                      <option value="11" data-grade-band="9-12">11th grade</option>
+                      <option value="12" data-grade-band="9-12">12th grade</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div id="questionnaireGrid" class="questionnaire-grid"></div>
+                <div id="setupError" class="error-text"></div>
+              </div>
+
+              <section id="choicesPanel" class="build-panel build-panel-bottom"></section>
+            </div>
+          </div>
+        </div>
+
+        <div class="overlay-actions setup-actions">
+          <button id="prevStepBtn" class="secondary" type="button">Back</button>
+          <button id="nextStepBtn" class="secondary" type="button">Next</button>
+          <button id="startGameBtn" class="primary" type="button">Start Run</button>
+          <button id="endSessionBtn" class="secondary hidden" type="button">Finish</button>
+          <button id="runAgainBtn" class="primary hidden" type="button">Play Next Run</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="game" width="875" height="687"></canvas>
+
+      <div id="scenarioModal" class="overlay hidden">
+        <div class="overlay-card scenario-card">
+          <div class="scenario-header">
+            <h2 id="scenarioTitle">Quick Choice</h2>
+            <div id="scenarioMeta" class="scenario-meta"></div>
+          </div>
+
+          <p id="scenarioText" class="scenario-text"></p>
+          <div id="scenarioHint" class="scenario-hint hidden"></div>
+
+          <div id="scenarioChoices" class="scenario-choices"></div>
+
+          <div id="scenarioResultBox" class="result-box hidden">
+            <p id="scenarioFeedback" class="scenario-feedback"></p>
+            <div id="scenarioOutcome" class="outcome-pill"></div>
+
+            <div class="overlay-actions">
+              <button id="scenarioContinueBtn" class="primary" type="button">Continue</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version": "2024.11.0", "token": "642255d447fd46dbbcd67f3ff9dbdf59", "server_timing": {"name": {"cfCacheStatus": true, "cfEdge": true, "cfExtPri": true, "cfL4": true, "cfOrigin": true, "cfSpeedBrain": true}, "location_startswith": null}}' crossorigin="anonymous"></script>
+</body>
+</html>

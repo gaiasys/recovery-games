@@ -20,7 +20,7 @@ import {
   createGameState,
   createGameSystems,
   getReadableTool
-} from "./systems.js";
+} from "./system.js";
 import { createRenderer } from "./render.js";
 
 function createAudio(src) {
