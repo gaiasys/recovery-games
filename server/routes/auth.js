@@ -48,35 +48,79 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
-    // Update last_login timestamp
-    await db.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
+    // Create a session row; its UUID becomes the JWT jti claim
+    const { rows: sessionRows } = await db.query(
+      `INSERT INTO sessions (user_id) VALUES ($1) RETURNING id`,
+      [user.id]
+    );
+    const sessionId = sessionRows[0].id;
 
+    // Update last_login and backfill jwt_jti once we have the token
     const token = jwt.sign(
-      { sub: user.id, username: user.username, role: user.role },
+      { sub: user.id, username: user.username, role: user.role, jti: sessionId },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
+    await db.query(
+      'UPDATE users SET last_login = NOW() WHERE id = $1',
+      [user.id]
+    );
+
+    await db.query(
+      'UPDATE sessions SET jwt_jti = $1 WHERE id = $2',
+      [sessionId, sessionId]
+    );
+
     setCookie(res, token);
 
-    res.json({ id: user.id, username: user.username, role: user.role });
+    res.json({ id: user.id, username: user.username, role: user.role, sessionId });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
 });
 
-// GET /api/auth/me — verify current session
-router.get('/me', authenticate, (req, res) => {
-  res.json({
-    id: req.user.sub,
-    username: req.user.username,
-    role: req.user.role,
-  });
+// GET /api/auth/me — verify current session and check user is still active
+router.get('/me', authenticate, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT id, username, role, is_active FROM users WHERE id = $1',
+      [req.user.sub]
+    );
+
+    const user = rows[0];
+    if (!user || !user.is_active) {
+      res.clearCookie(process.env.COOKIE_NAME, { path: '/' });
+      return res.status(401).json({ error: 'Account inactive.' });
+    }
+
+    res.json({ id: user.id, username: user.username, role: user.role });
+  } catch (err) {
+    console.error('/me error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
 });
 
 // POST /api/auth/logout
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
+  try {
+    const token = req.cookies?.[process.env.COOKIE_NAME];
+    if (token) {
+      const decoded = jwt.decode(token);
+      if (decoded?.jti) {
+        await db.query(
+          `UPDATE sessions
+           SET session_end = NOW(), completion_status = 'abandoned', exit_type = 'logout'
+           WHERE id = $1`,
+          [decoded.jti]
+        );
+      }
+    }
+  } catch {
+    // Non-fatal — always clear the cookie regardless
+  }
+
   res.clearCookie(process.env.COOKIE_NAME, { path: '/' });
   res.json({ ok: true });
 });
