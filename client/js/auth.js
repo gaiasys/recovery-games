@@ -8,12 +8,12 @@ export async function checkSession() {
   }
 }
 
-export async function login(username, pin) {
+export async function login(userId, pin) {
   const res = await fetch('/api/auth/login', {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, pin }),
+    body: JSON.stringify({ userId, pin }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Login failed.');

@@ -96,13 +96,13 @@
 <body>
   <div class="login-card">
     <h1>Sign In</h1>
-    <p>Enter your username and 4-digit PIN to continue.</p>
+    <p>New here? Choose a User ID and PIN — your account will be created automatically.</p>
 
     <form id="loginForm" novalidate>
       <div class="field">
-        <label for="username">Username</label>
+        <label for="userId">User ID</label>
         <input
-          id="username"
+          id="userId"
           type="text"
           autocomplete="username"
           autocapitalize="none"
@@ -153,11 +153,11 @@
       e.preventDefault();
       errorEl.textContent = '';
 
-      const username = document.getElementById('username').value.trim();
-      const pin      = pinInput.value;
+      const userId = document.getElementById('userId').value.trim();
+      const pin    = pinInput.value;
 
-      if (!username) {
-        errorEl.textContent = 'Please enter your username.';
+      if (!userId) {
+        errorEl.textContent = 'Please enter a User ID.';
         return;
       }
       if (!/^\d{4}$/.test(pin)) {
@@ -169,12 +169,12 @@
       submitBtn.textContent = 'Signing in…';
 
       try {
-        await login(username, pin);
+        await login(userId, pin);
         window.location.replace('/index.html');
       } catch (err) {
         errorEl.textContent = err.message === 'Failed to fetch'
           ? 'Could not reach the server. Check your connection.'
-          : 'Invalid username or PIN.';
+          : err.message;
         pinInput.value        = '';
         submitBtn.disabled    = false;
         submitBtn.textContent = 'Sign In';
