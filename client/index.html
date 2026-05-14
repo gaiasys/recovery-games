@@ -121,10 +121,16 @@
 
   <script type="module">
     import { guardPage, logout } from './js/auth.js';
-    guardPage();
-    document.getElementById('logoutBtn').addEventListener('click', () => logout());
+    import { initGameApp } from './js/main.js';
+
+    document.body.style.visibility = 'hidden';
+    const user = await guardPage();
+    if (user) {
+      document.body.style.visibility = 'visible';
+      document.getElementById('logoutBtn').addEventListener('click', () => logout());
+      window.gameApp = initGameApp({ doc: document, win: window });
+    }
   </script>
-  <script type="module" src="./js/main.js"></script>
   <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version": "2024.11.0", "token": "642255d447fd46dbbcd67f3ff9dbdf59", "server_timing": {"name": {"cfCacheStatus": true, "cfEdge": true, "cfExtPri": true, "cfL4": true, "cfOrigin": true, "cfSpeedBrain": true}, "location_startswith": null}}' crossorigin="anonymous"></script>
 </body>
 </html>

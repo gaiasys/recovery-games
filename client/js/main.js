@@ -316,8 +316,3 @@ export function initGameApp({ doc = document, win = window } = {}) {
   };
 }
 
-if (typeof window !== "undefined" && typeof document !== "undefined") {
-  window.addEventListener("DOMContentLoaded", () => {
-    window.gameApp = initGameApp({ doc: document, win: window });
-  });
-}
